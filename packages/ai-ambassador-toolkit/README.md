@@ -69,7 +69,7 @@ newly created assistant gets.
 | `@msg2ai/ai-ambassador-toolkit` | `ambassador`, `ambassador-mcp` | none |
 | `@msg2ai/hotel-ambassador` | `hotel-ambassador`, `hotel-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `HOTEL` |
 | `@msg2ai/event-ambassador` | `event-ambassador`, `event-ambassador-mcp` | `MEETING_EVENT_ASSISTANT` |
-| `@msg2ai/trip` | `trip`, `trip-mcp` | `CONCIERGE_ASSISTANT` / `TRAVEL_AGENCY` |
+| `@msg2ai/trip-ambassador` | `trip-ambassador`, `trip-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `TRAVEL_AGENCY` |
 
 ## Things worth knowing before you automate
 

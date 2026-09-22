@@ -7,7 +7,7 @@ Public tooling for the msg2ai platform.
 | [`@msg2ai/ai-ambassador-toolkit`](packages/ai-ambassador-toolkit) | `ambassador`, `ambassador-mcp` | none |
 | [`@msg2ai/hotel-ambassador`](packages/hotel-ambassador) | `hotel-ambassador`, `hotel-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `HOTEL` |
 | [`@msg2ai/event-ambassador`](packages/event-ambassador) | `event-ambassador`, `event-ambassador-mcp` | `MEETING_EVENT_ASSISTANT` |
-| [`@msg2ai/trip`](packages/trip) | `trip`, `trip-mcp` | `CONCIERGE_ASSISTANT` / `TRAVEL_AGENCY` |
+| [`@msg2ai/trip-ambassador`](packages/trip-ambassador) | `trip-ambassador`, `trip-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `TRAVEL_AGENCY` |
 
 The toolkit is the only package with code. The other three are thin bins that
 call into it; the vertical is selected by the **name the binary was invoked
@@ -25,7 +25,7 @@ manual-dispatch only and uses npm OIDC trusted publishing; `registry/` holds
 the MCP Registry manifests, which cannot be submitted until the packages exist
 on npm and the namespace DNS record is in place. See `registry/README.md`.
 
-⚠️ `@msg2ai/trip` is buildable but its vertical is not fully supported
+⚠️ `@msg2ai/trip-ambassador` is buildable but its vertical is not fully supported
 server-side yet: `assistantData.travelPlan` is not a field on the server's
 schema, so an itinerary cannot be persisted. The `TRAVEL_AGENCY` property type
 works; the itinerary does not.
