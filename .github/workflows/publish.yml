@@ -47,6 +47,11 @@ jobs:
       # is `private: true`, so publishing from there was never going to work —
       # the five workspace packages are published individually, toolkit first,
       # because the aliases depend on it at an exact version.
+      # The registry manifests name the same versions as package.json, so a
+      # release is exactly when they drift.
+      - name: Validate registry manifests
+        run: node scripts/validate-registry.mjs
+
       - name: Preflight
         run: node scripts/release.mjs --check "${{ inputs.version }}"
 
