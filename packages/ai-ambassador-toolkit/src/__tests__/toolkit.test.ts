@@ -24,6 +24,21 @@ describe('catalog', () => {
     }
   });
 
+  it('does not ask for customerId, which the server derives', () => {
+    // create_broadcast and create_reminder used to require it because the
+    // delegated controllers did. msg2ai-server f35f2417 resolves the named
+    // serviceId inside an org-scoped predicate and injects that service's own
+    // customerId, discarding whatever the body sends. Asking for it would tell
+    // an agent to supply a value that is ignored and that it cannot learn.
+    for (const name of ['create_broadcast', 'create_reminder']) {
+      const tool = findTool(name)!;
+      expect(tool.input.properties).not.toHaveProperty('customerId');
+      expect(tool.input.required ?? []).not.toContain('customerId');
+      // serviceId is what tenancy is derived from now, so it cannot be optional.
+      expect(tool.input.required ?? []).toContain('serviceId');
+    }
+  });
+
   it('only capabilities is unscoped', () => {
     const unscoped = TOOLS.filter((t) => t.scope === null).map((t) => t.name);
     expect(unscoped).toEqual(['capabilities']);

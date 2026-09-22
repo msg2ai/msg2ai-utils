@@ -610,9 +610,6 @@ export const TOOLS: AgentTool[] = [
     input: {
       type: 'object',
       properties: {
-        customerId: {
-          type: 'string'
-        },
         serviceId: {
           type: 'string'
         },
@@ -659,7 +656,15 @@ export const TOOLS: AgentTool[] = [
           type: 'object'
         }
       },
-      required: ['customerId', 'serviceId', 'name', 'channel', 'textType', 'messageLanguage', 'audienceGroupIds', 'schedule']
+      required: [
+        'serviceId',
+        'name',
+        'channel',
+        'textType',
+        'messageLanguage',
+        'audienceGroupIds',
+        'schedule'
+      ]
     }
   },
   {
@@ -1359,9 +1364,6 @@ export const TOOLS: AgentTool[] = [
     input: {
       type: 'object',
       properties: {
-        customerId: {
-          type: 'string'
-        },
         serviceId: {
           type: 'string'
         },
@@ -1411,7 +1413,13 @@ export const TOOLS: AgentTool[] = [
           type: 'number'
         }
       },
-      required: ['customerId', 'serviceId', 'name', 'reminderType', 'triggerType', 'audienceGroupIds']
+      required: [
+        'serviceId',
+        'name',
+        'reminderType',
+        'triggerType',
+        'audienceGroupIds'
+      ]
     }
   },
   {
