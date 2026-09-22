@@ -1,9 +1,9 @@
 /**
  * The tool catalog.
  *
- * This mirrors `src/services/agentCatalog.ts` in msg2ai-server, which is the
- * source of truth. The server's own bijection test guarantees that every tool
- * listed there is mounted at the path and scope it advertises; this file is
+ * The gateway publishes the authoritative catalog at GET /capabilities, and a
+ * test there guarantees every tool it lists is mounted at the path and scope
+ * it advertises. This file is
  * the client-side copy of that list, and `catalogMatches()` below is how a
  * skin checks it has not drifted from the server it is talking to.
  *

@@ -11,14 +11,26 @@ import { findTool, type AgentTool } from './tools';
 export interface AmbassadorClientOptions {
   /** `msgk_live_…`. Never logged, never echoed. */
   apiKey: string;
-  /** Defaults to the production gateway. */
+  /** Defaults to DEFAULT_BASE_URL. Point it at a non-production gateway to
+   *  test against one. */
   baseUrl?: string;
   /** Defaults to 30s. A broadcast send can be slow. */
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
 }
 
-export const DEFAULT_BASE_URL = 'https://prod-service-dot-msg2ai-server.ue.r.appspot.com';
+/**
+ * The published gateway hostname.
+ *
+ * npm forbids re-publishing a version, so this value is permanent for every
+ * release that ships it. It is therefore a name we control and can re-point,
+ * never a name belonging to whatever happens to be hosting the gateway today:
+ * that would pin infrastructure into an artifact nobody can edit, and would
+ * publish the shape of our deployment to everyone who installs the package.
+ *
+ * Override per environment with MSG2AI_BASE_URL or --base-url.
+ */
+export const DEFAULT_BASE_URL = 'https://api.msg2ai.xyz';
 
 export class AmbassadorError extends Error {
   constructor(
@@ -52,6 +64,7 @@ export function buildPath(
 export class AmbassadorClient {
   private readonly apiKey: string;
   private readonly baseUrl: string;
+  private readonly host: string;
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
 
@@ -64,7 +77,22 @@ export class AmbassadorClient {
       );
     }
     this.apiKey = options.apiKey;
-    this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
+    const configured = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, '');
+    // Parsed here, once, so a malformed base URL is a named error at
+    // construction rather than a bare TypeError from whichever line happens to
+    // call `new URL` first. Re-parsing it inside the catch below would be
+    // worse still: it can throw from inside the handler and discard the error
+    // it was written to explain.
+    try {
+      this.host = new URL(configured).host;
+    } catch {
+      throw new AmbassadorError(
+        `"${configured}" is not a valid base URL.`,
+        400,
+        'INVALID_BASE_URL'
+      );
+    }
+    this.baseUrl = configured;
     this.timeoutMs = options.timeoutMs ?? 30_000;
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
   }
@@ -134,6 +162,18 @@ export class AmbassadorClient {
           `The gateway did not respond within ${this.timeoutMs}ms`,
           504,
           'TIMEOUT'
+        );
+      }
+      // Node reports an unresolvable host as a bare "fetch failed", with the
+      // cause buried. On a first run that is the likeliest failure and the
+      // least self-explanatory, so name the host that did not resolve.
+      const cause = (error as { cause?: { code?: string } }).cause;
+      if (cause?.code === 'ENOTFOUND' || cause?.code === 'EAI_AGAIN') {
+        throw new AmbassadorError(
+          `Could not resolve ${this.host}. ` +
+            'Set MSG2AI_BASE_URL (or --base-url) if you are pointing at another environment.',
+          503,
+          'GATEWAY_UNREACHABLE'
         );
       }
       throw new AmbassadorError((error as Error).message, 500, 'NETWORK_ERROR');

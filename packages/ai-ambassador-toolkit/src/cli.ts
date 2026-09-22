@@ -64,7 +64,7 @@ function usage(skinLabel: string, bin: string): string {
     '',
     'Setup:',
     '  MSG2AI_AGENT_KEY   your msgk_live_… key (or pass --key)',
-    '  MSG2AI_BASE_URL    gateway base URL (default: production)',
+    `  MSG2AI_BASE_URL    gateway base URL (default: ${DEFAULT_BASE_URL})`,
     '',
     'Tools:'
   ];

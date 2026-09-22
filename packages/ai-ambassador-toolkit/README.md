@@ -97,4 +97,4 @@ catalog differs from what the gateway offers, in either direction.
 | Variable | Meaning |
 | --- | --- |
 | `MSG2AI_AGENT_KEY` | your `msgk_live_…` key (required) |
-| `MSG2AI_BASE_URL` | gateway base URL; defaults to production |
+| `MSG2AI_BASE_URL` | gateway base URL; defaults to `https://api.msg2ai.xyz` |

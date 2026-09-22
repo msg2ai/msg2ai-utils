@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
-import { AmbassadorClient, AmbassadorError, buildPath } from '../client';
+import { AmbassadorClient, AmbassadorError, DEFAULT_BASE_URL, buildPath } from '../client';
 import { TOOLS, catalogMatches, findTool, toolsForScopes } from '../tools';
 import { detectSkin, SKINS } from '../skin';
 import { buildOpenApi } from '../openapi';
@@ -260,5 +261,56 @@ describe('openapi', () => {
     const doc = buildOpenApi();
     const op = (doc.paths['/api/agent/usage'] as Record<string, Record<string, unknown>>).get;
     expect(op['x-required-scope']).toBe('usage:read');
+  });
+});
+
+describe('DEFAULT_BASE_URL', () => {
+  it('is a hostname we control, not the App Engine URL underneath', () => {
+    // npm forbids re-publishing a version, so this value is permanent for
+    // every release that ships it. An appspot host would pin the GCP project,
+    // its region and its service naming into an artifact we cannot edit.
+    expect(DEFAULT_BASE_URL).toBe('https://api.msg2ai.xyz');
+    expect(DEFAULT_BASE_URL).not.toMatch(/appspot|googleusercontent|run\.app/);
+  });
+
+  it('has no trailing slash, so path joining cannot double up', () => {
+    expect(DEFAULT_BASE_URL.endsWith('/')).toBe(false);
+  });
+
+  it('LEAK: the build strips comments, because comments ship too', () => {
+    // This assertion is the only thing standing between a well-meaning
+    // explanatory comment and a permanent publication. The first version of
+    // DEFAULT_BASE_URL's own comment explained why not to publish the App
+    // Engine hostname BY QUOTING IT, into dist/client.js and dist/client.d.ts.
+    // A test that reads the constant cannot see that; removeComments can.
+    // scripts/release.mjs re-checks the built artifact before publishing.
+    // vitest runs with cwd at the package root.
+    const cfg = JSON.parse(readFileSync('tsconfig.build.json', 'utf8'));
+    expect(cfg.compilerOptions?.removeComments).toBe(true);
+  });
+
+  it('rejects a malformed base URL at construction, with a code', () => {
+    // Not from inside the catch: re-parsing there can throw out of the handler
+    // and discard the error it was written to explain.
+    expect(() => new AmbassadorClient({ apiKey: KEY, baseUrl: 'https://' })).toThrow(
+      expect.objectContaining({ code: 'INVALID_BASE_URL' })
+    );
+    expect(() => new AmbassadorClient({ apiKey: KEY, baseUrl: 'not a url' })).toThrow(
+      expect.objectContaining({ code: 'INVALID_BASE_URL' })
+    );
+  });
+
+  it('names the unresolvable host rather than reporting "fetch failed"', async () => {
+    const enotfound = Object.assign(new Error('fetch failed'), {
+      cause: { code: 'ENOTFOUND' }
+    });
+    const client = new AmbassadorClient({
+      apiKey: KEY,
+      fetchImpl: (() => Promise.reject(enotfound)) as unknown as typeof fetch
+    });
+    await expect(client.call('capabilities')).rejects.toMatchObject({
+      code: 'GATEWAY_UNREACHABLE',
+      message: expect.stringContaining('api.msg2ai.xyz')
+    });
   });
 });
