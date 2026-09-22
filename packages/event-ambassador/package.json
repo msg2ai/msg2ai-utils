@@ -1,20 +1,35 @@
 {
   "name": "@msg2ai/event-ambassador",
   "version": "0.1.0",
-  "description": "Event Ambassador — msg2ai AI Ambassador CLI and MCP server, preset for this vertical.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Event Ambassador \u2014 msg2ai AI Ambassador CLI and MCP server, preset for this vertical.",
   "license": "UNLICENSED",
   "bin": {
     "event-ambassador": "bin/event-ambassador.js",
     "event-ambassador-mcp": "bin/event-ambassador-mcp.js"
   },
-  "files": ["bin", "README.md"],
-  "engines": { "node": ">=18" },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/msg2ai/msg2ai-utils.git",
     "directory": "packages/event-ambassador"
   },
-  "keywords": ["mcp", "modelcontextprotocol", "msg2ai", "whatsapp", "agent", "cli"],
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "msg2ai",
+    "whatsapp",
+    "agent",
+    "cli"
+  ],
   "dependencies": {
     "@msg2ai/ai-ambassador-toolkit": "0.1.0"
   }
