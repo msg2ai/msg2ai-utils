@@ -125,6 +125,35 @@ describe('AmbassadorClient', () => {
       .rejects.toMatchObject({ code: 'NON_JSON_RESPONSE' });
   });
 
+  it('returns a CSV export as text instead of failing on JSON.parse', async () => {
+    // export_survey_responses is the one tool that does not answer JSON.
+    const fetchImpl = (async () =>
+      new Response('name,answer\nAda,yes\n', {
+        status: 200,
+        headers: { 'content-type': 'text/csv; charset=utf-8' }
+      })) as unknown as typeof fetch;
+
+    const out = (await clientWith(fetchImpl).call('export_survey_responses', {
+      surveyId: 'srv_1'
+    })) as { contentType: string; body: string };
+
+    expect(out.body).toContain('Ada,yes');
+    expect(out.contentType).toContain('csv');
+  });
+
+  it('SECURITY: still names an HTML body even with a 200, rather than returning it', async () => {
+    // A deployment-protection page can answer 200. The CSV branch above must
+    // not become a way for one to be handed back as if it were data.
+    const fetchImpl = (async () =>
+      new Response('<html>Authentication Required</html>', {
+        status: 200,
+        headers: { 'content-type': 'text/html' }
+      })) as unknown as typeof fetch;
+
+    await expect(clientWith(fetchImpl).call('list_assistants'))
+      .rejects.toMatchObject({ code: 'NON_JSON_RESPONSE' });
+  });
+
   it('rejects an unknown tool before making a request', async () => {
     const fetchImpl = vi.fn() as unknown as typeof fetch;
     await expect(clientWith(fetchImpl).call('nope')).rejects.toThrow(/Unknown tool/);

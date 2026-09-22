@@ -132,6 +132,16 @@ export class AmbassadorClient {
       });
 
       const text = await response.text();
+
+      // export_survey_responses answers text/csv, not JSON. Narrowed to CSV
+      // rather than "any non-JSON type" on purpose: an HTML body must keep
+      // falling through to the parse below, because a deployment-protection
+      // page is what that branch exists to name, and it can arrive with a 200.
+      const contentType = response.headers?.get?.('content-type') ?? '';
+      if (response.ok && contentType.includes('csv')) {
+        return { contentType, body: text };
+      }
+
       let parsed: unknown;
       try {
         parsed = text ? JSON.parse(text) : {};
