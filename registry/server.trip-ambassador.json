@@ -1,15 +1,19 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
-  "name": "com.businessmsg/trip-ambassador",
-  "description": "msg2ai AI Ambassador \u2014 manage assistants, knowledge, templates and broadcasts with a scoped agent key.",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.msg2ai/trip-ambassador",
+  "title": "Trip Ambassador",
+  "description": "Travel agent: traveller conversations, knowledge, templates and broadcasts.",
+  "websiteUrl": "https://msg2ai.xyz",
   "repository": {
     "url": "https://github.com/msg2ai/msg2ai-utils",
-    "source": "github"
+    "source": "github",
+    "subfolder": "packages/trip-ambassador"
   },
   "version": "0.1.0",
   "packages": [
     {
       "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@msg2ai/trip-ambassador",
       "version": "0.1.0",
       "transport": {
