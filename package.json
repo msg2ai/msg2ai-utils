@@ -9,6 +9,7 @@
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "release:check": "node scripts/release.mjs --check",
-    "release": "node scripts/release.mjs --publish"
+    "release": "node scripts/release.mjs --publish",
+    "validate:registry": "node scripts/validate-registry.mjs"
   }
 }
