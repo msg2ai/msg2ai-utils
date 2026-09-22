@@ -7,8 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to publish (must match package.json)
+        description: Version to publish (must match every package.json)
         required: true
+      dry_run:
+        description: Run npm publish --dry-run instead of publishing
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -18,7 +22,7 @@ jobs:
     environment: npm-publish
     permissions:
       contents: read
-      id-token: write # npm trusted publishing
+      id-token: write # npm trusted publishing + provenance
     steps:
       - uses: actions/checkout@v4
 
@@ -33,26 +37,27 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+
+      # Must precede the preflight: the toolkit's bin targets live in dist/,
+      # and the preflight refuses to publish a manifest whose bin does not
+      # exist rather than shipping a package whose command is missing.
       - run: npm run build
 
-      # Fail before publishing rather than after: a version mismatch is the
-      # one mistake that cannot be undone, since npm forbids re-publishing.
-      - name: Verify the version matches the request
-        run: |
-          PKG=$(node -p "require('./package.json').version")
-          if [ "$PKG" != "${{ inputs.version }}" ]; then
-            echo "package.json is $PKG but you asked for ${{ inputs.version }}"
-            exit 1
-          fi
+      # Every check for every package, before anything is published. The root
+      # is `private: true`, so publishing from there was never going to work —
+      # the five workspace packages are published individually, toolkit first,
+      # because the aliases depend on it at an exact version.
+      - name: Preflight
+        run: node scripts/release.mjs --check "${{ inputs.version }}"
 
-      - name: Verify this version is not already published
-        run: |
-          NAME=$(node -p "require('./package.json').name")
-          if npm view "$NAME@${{ inputs.version }}" version >/dev/null 2>&1; then
-            echo "$NAME@${{ inputs.version }} already exists"
-            exit 1
-          fi
-
-      # No NODE_AUTH_TOKEN: OIDC trusted publishing, so there is no long-lived
-      # credential in this repo to leak.
-      - run: npm publish --provenance --access public
+      # NODE_AUTH_TOKEN is only needed until each package exists: npm accepts a
+      # trusted publisher on a package it already knows, so the first release
+      # cannot use OIDC. Configure trusted publishing after this run, delete
+      # the secret, and later runs authenticate with no long-lived credential.
+      # --provenance uses the OIDC token either way.
+      - name: Publish
+        run: >-
+          node scripts/release.mjs --publish "${{ inputs.version }}"
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}

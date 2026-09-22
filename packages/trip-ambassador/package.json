@@ -1,6 +1,9 @@
 {
   "name": "@msg2ai/trip-ambassador",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Trip Ambassador \u2014 msg2ai AI Ambassador CLI and MCP server, preset for this vertical.",
   "license": "UNLICENSED",
   "bin": {
