@@ -94,8 +94,14 @@ export async function handle(
   }
 }
 
+/**
+ * Start the stdio server. Exported rather than only run on `require.main`,
+ * because the alias packages (`hotel-ambassador`, `trip`, …) invoke this from
+ * their own bin file — and when they do, `require.main` is THEIR module, so a
+ * module-guarded entry point would load and then silently do nothing.
+ */
 /* c8 ignore start */
-async function main() {
+export async function serve() {
   const skin = detectSkin();
   const apiKey = process.env.MSG2AI_AGENT_KEY ?? '';
 
@@ -140,7 +146,7 @@ async function main() {
 }
 
 if (require.main === module) {
-  void main();
+  void serve();
 }
 /* c8 ignore stop */
 

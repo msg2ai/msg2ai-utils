@@ -42,8 +42,16 @@ export const SKINS: Record<Skin['id'], Skin> = {
  */
 export function detectSkin(argv1: string = process.argv[1] ?? ''): Skin {
   const name = basename(argv1).replace(/\.(js|mjs|cjs|ts)$/, '');
-  if (name.startsWith('hotel-')) return SKINS.hotel;
-  if (name.startsWith('event-')) return SKINS.event;
-  if (name.startsWith('trip-')) return SKINS.trip;
+
+  // Both forms, because the packages do not share one naming shape:
+  // `hotel-ambassador` / `hotel-ambassador-mcp` carry the suffix, while the
+  // trip package's binaries are plain `trip` and `trip-mcp`. Matching the bare
+  // name as well as the prefix keeps one build serving all of them.
+  const matches = (prefix: string) =>
+    name === prefix || name.startsWith(`${prefix}-`);
+
+  if (matches('hotel')) return SKINS.hotel;
+  if (matches('event')) return SKINS.event;
+  if (matches('trip')) return SKINS.trip;
   return SKINS.generic;
 }

@@ -137,6 +137,10 @@ describe('skins', () => {
     ['/usr/local/bin/hotel-ambassador-mcp', 'hotel'],
     ['/usr/local/bin/event-ambassador', 'event'],
     ['/usr/local/bin/trip-ambassador-mcp', 'trip'],
+    // The trip package's binaries are plain `trip` / `trip-mcp`, with no
+    // vertical suffix, so the bare name has to match too.
+    ['/usr/local/bin/trip', 'trip'],
+    ['/usr/local/bin/trip-mcp', 'trip'],
     ['/usr/local/bin/ambassador', 'generic']
   ])('%s selects the %s skin', (argv1, expected) => {
     expect(detectSkin(argv1).id).toBe(expected);
