@@ -57,25 +57,85 @@ On the **apex**, not `_mcp.`:
 msg2ai.com.  IN TXT  "v=MCPv1; k=ed25519; p=<base64 public key>"
 ```
 
-Generate the key and read off the record:
+### 1. Generate the key
+
+The private key is the credential for the whole namespace, so keep it out of
+shell history and out of this repo:
 
 ```bash
-openssl genpkey -algorithm Ed25519 -out key.pem
-PUBLIC_KEY="$(openssl pkey -in key.pem -pubout -outform DER | tail -c 32 | base64)"
-echo "msg2ai.com. IN TXT \"v=MCPv1; k=ed25519; p=${PUBLIC_KEY}\""
+umask 077
+openssl genpkey -algorithm Ed25519 -out mcp-namespace-key.pem
+
+# The value to paste into GoDaddy (public — safe to share):
+echo "v=MCPv1; k=ed25519; p=$(openssl pkey -in mcp-namespace-key.pem -pubout -outform DER | tail -c 32 | base64)"
+
+# The private key, as the 64 hex characters mcp-publisher wants (SECRET):
+openssl pkey -in mcp-namespace-key.pem -text -noout | grep -A3 'priv:' | tail -n +2 | tr -d ' :\n'; echo
 ```
 
-Then, with the private key as 64 hex characters:
+Store the private key in GCP Secret Manager or a password manager. Nothing in
+this repo or in CI needs it — registry submission is a deliberate manual step.
+
+### 2. Add it at GoDaddy
+
+DNS for `msg2ai.com` is managed at GoDaddy (`ns55`/`ns56.domaincontrol.com`).
+
+**Domains → msg2ai.com → DNS → Add New Record**
+
+| Field | Value |
+| --- | --- |
+| Type | `TXT` |
+| Name | `@` |
+| Value | `v=MCPv1; k=ed25519; p=<base64>` |
+| TTL | Custom → 600 seconds |
+
+Four things that silently produce a record which never verifies:
+
+1. **Name must be `@`**, not blank and not `msg2ai.com`. GoDaddy appends the
+   domain to whatever you type, so `msg2ai.com` becomes
+   `msg2ai.com.msg2ai.com`.
+2. **Do not paste the surrounding quotes.** GoDaddy adds them itself; a pasted
+   `"` ends up inside the value.
+3. **Check you are in the `.com` zone.** `msg2ai.xyz` is a separate domain in
+   the same GoDaddy account, and a record there proves nothing for
+   `com.msg2ai`.
+4. **Add, do not edit.** `msg2ai.com` already carries a Zoho SPF record and a
+   Zoho verification TXT. TXT records coexist on the same name — replacing
+   either one breaks mail.
+
+A 600-second TTL rather than GoDaddy's 1-hour default makes a mistake cheap to
+correct.
+
+### 3. Check it before using it
+
+```bash
+npm run verify:dns
+```
+
+It derives the domain from the namespace in `registry/*.json`, so it cannot be
+pointed at the wrong zone, and it catches the pasted-quote and wrong-key-length
+mistakes that otherwise surface as an opaque `mcp-publisher` failure:
+
+```
+namespace com.msg2ai/*
+domain    msg2ai.com
+
+✓ v=MCPv1; k=ed25519; p=<base64>
+
+  Next: mcp-publisher login dns --domain=msg2ai.com --private-key=<64-hex>
+```
+
+Propagation is usually a minute or two at a 600s TTL, but a negative answer can
+be cached — if it still reports nothing after a few minutes, that is normal
+rather than a sign the record is wrong.
+
+### 4. Log in and submit
 
 ```bash
 mcp-publisher login dns --domain=msg2ai.com --private-key=<64-hex>
+mcp-publisher publish registry/server.ai-ambassador-toolkit.json
+# ...and the other four
 ```
 
-`msg2ai.com` already carries a Zoho SPF record and a Zoho verification TXT.
-TXT records coexist on the same name, so this is an ADDITIONAL record — add
-one, do not edit or replace the existing entries. DNS is managed at GoDaddy
-(`ns55/ns56.domaincontrol.com`).
-
-⚠️ The private key is the credential for the whole namespace. It belongs in a
-password manager or GCP Secret Manager, not in this repo and not in CI: nothing
-here needs it, because publishing to the registry is a deliberate manual step.
+⚠️ The private key is the credential for the whole namespace. Anyone holding it
+can publish under `com.msg2ai/*`.
