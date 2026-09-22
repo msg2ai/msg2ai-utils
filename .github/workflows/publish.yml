@@ -1,0 +1,58 @@
+name: Publish
+
+# Manual only. `release: created` does not fire for drafts and needs a fresh
+# tag each time; a human asking, with the version stated, is both simpler and
+# auditable.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish (must match package.json)
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Bind to an environment with a required reviewer: an OIDC trust bound
+    # only to a filename lets any push with write access publish.
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # Pinned: npm's trusted-publishing support has moved between minors.
+      - run: npm install -g npm@11
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      # Fail before publishing rather than after: a version mismatch is the
+      # one mistake that cannot be undone, since npm forbids re-publishing.
+      - name: Verify the version matches the request
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$PKG" != "${{ inputs.version }}" ]; then
+            echo "package.json is $PKG but you asked for ${{ inputs.version }}"
+            exit 1
+          fi
+
+      - name: Verify this version is not already published
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          if npm view "$NAME@${{ inputs.version }}" version >/dev/null 2>&1; then
+            echo "$NAME@${{ inputs.version }} already exists"
+            exit 1
+          fi
+
+      # No NODE_AUTH_TOKEN: OIDC trusted publishing, so there is no long-lived
+      # credential in this repo to leak.
+      - run: npm publish --provenance --access public

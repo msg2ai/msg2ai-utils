@@ -1,0 +1,35 @@
+{
+  "name": "@msg2ai/ai-ambassador-toolkit",
+  "version": "0.1.0",
+  "description": "CLI and MCP server for the msg2ai AI Ambassador agent gateway. Manage assistants, knowledge, templates and broadcasts with a scoped agent key.",
+  "license": "UNLICENSED",
+  "private": false,
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "ambassador": "dist/cli.js",
+    "ambassador-mcp": "dist/mcp.js"
+  },
+  "files": ["dist", "README.md"],
+  "engines": { "node": ">=18" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msg2ai/msg2ai-utils.git",
+    "directory": "packages/ai-ambassador-toolkit"
+  },
+  "homepage": "https://github.com/msg2ai/msg2ai-utils#readme",
+  "keywords": ["mcp", "modelcontextprotocol", "msg2ai", "whatsapp", "agent", "cli"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js dist/mcp.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

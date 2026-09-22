@@ -1,0 +1,32 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "com.businessmsg/hotel-ambassador",
+  "description": "msg2ai AI Ambassador — manage assistants, knowledge, templates and broadcasts with a scoped agent key.",
+  "repository": {
+    "url": "https://github.com/msg2ai/msg2ai-utils",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@msg2ai/hotel-ambassador",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "MSG2AI_AGENT_KEY",
+          "description": "Agent key minted by an Admin of your msg2ai organization (msgk_live_...).",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "MSG2AI_BASE_URL",
+          "description": "Gateway base URL. Defaults to production.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
