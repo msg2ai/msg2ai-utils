@@ -11,7 +11,7 @@ import { basename } from 'path';
  */
 
 export interface Skin {
-  id: 'generic' | 'hotel' | 'event' | 'trip';
+  id: 'generic' | 'hotel' | 'event' | 'trip' | 'vacation-rental';
   label: string;
   defaults: { caseType?: string; propertyType?: string };
 }
@@ -32,6 +32,13 @@ export const SKINS: Record<Skin['id'], Skin> = {
     id: 'trip',
     label: 'Trip Ambassador',
     defaults: { caseType: 'CONCIERGE_ASSISTANT', propertyType: 'TRAVEL_AGENCY' }
+  },
+  'vacation-rental': {
+    id: 'vacation-rental',
+    label: 'Vacation Rental Ambassador',
+    // The schema's enum is VACATION_HOME — there is no VACATION_RENTAL value.
+    // The package is named for the industry term; the field gets the real one.
+    defaults: { caseType: 'CONCIERGE_ASSISTANT', propertyType: 'VACATION_HOME' }
   }
 };
 
@@ -53,5 +60,8 @@ export function detectSkin(argv1: string = process.argv[1] ?? ''): Skin {
   if (matches('hotel')) return SKINS.hotel;
   if (matches('event')) return SKINS.event;
   if (matches('trip')) return SKINS.trip;
+  // Before `vacation`, so `vacation-rental-ambassador` is not shadowed by a
+  // future bare `vacation` skin.
+  if (matches('vacation-rental')) return SKINS['vacation-rental'];
   return SKINS.generic;
 }

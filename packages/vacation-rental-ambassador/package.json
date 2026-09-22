@@ -1,0 +1,19 @@
+{
+  "name": "@msg2ai/vacation-rental-ambassador",
+  "version": "0.1.0",
+  "description": "Vacation Rental Ambassador — msg2ai AI Ambassador CLI and MCP server, preset for this vertical.",
+  "license": "UNLICENSED",
+  "bin": {
+    "vacation-rental-ambassador": "bin/vacation-rental-ambassador.js",
+    "vacation-rental-ambassador-mcp": "bin/vacation-rental-ambassador-mcp.js"
+  },
+  "files": ["bin", "README.md"],
+  "engines": { "node": ">=18" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msg2ai/msg2ai-utils.git",
+    "directory": "packages/vacation-rental-ambassador"
+  },
+  "keywords": ["mcp", "modelcontextprotocol", "msg2ai", "whatsapp", "agent", "cli", "vacation-rental"],
+  "dependencies": { "@msg2ai/ai-ambassador-toolkit": "0.1.0" }
+}

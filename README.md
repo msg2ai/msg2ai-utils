@@ -8,6 +8,7 @@ Public tooling for the msg2ai platform.
 | [`@msg2ai/hotel-ambassador`](packages/hotel-ambassador) | `hotel-ambassador`, `hotel-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `HOTEL` |
 | [`@msg2ai/event-ambassador`](packages/event-ambassador) | `event-ambassador`, `event-ambassador-mcp` | `MEETING_EVENT_ASSISTANT` |
 | [`@msg2ai/trip-ambassador`](packages/trip-ambassador) | `trip-ambassador`, `trip-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `TRAVEL_AGENCY` |
+| [`@msg2ai/vacation-rental-ambassador`](packages/vacation-rental-ambassador) | `vacation-rental-ambassador`, `-mcp` | `CONCIERGE_ASSISTANT` / `VACATION_HOME` |
 
 The toolkit is the only package with code. The other three are thin bins that
 call into it; the vertical is selected by the **name the binary was invoked

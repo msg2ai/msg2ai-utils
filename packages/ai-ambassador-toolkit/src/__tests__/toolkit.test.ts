@@ -141,6 +141,8 @@ describe('skins', () => {
     // vertical suffix, so the bare name has to match too.
     ['/usr/local/bin/trip', 'trip'],
     ['/usr/local/bin/trip-mcp', 'trip'],
+    ['/usr/local/bin/vacation-rental-ambassador', 'vacation-rental'],
+    ['/usr/local/bin/vacation-rental-ambassador-mcp', 'vacation-rental'],
     ['/usr/local/bin/ambassador', 'generic']
   ])('%s selects the %s skin', (argv1, expected) => {
     expect(detectSkin(argv1).id).toBe(expected);
@@ -150,8 +152,18 @@ describe('skins', () => {
     expect(detectSkin('/tmp/my-wrapper').id).toBe('generic');
   });
 
+  it('every propertyType default is a value the server schema actually has', () => {
+    // PropertyType: HOTEL | VACATION_HOME | RESORT | TRAVEL_AGENCY.
+    // VACATION_RENTAL does not exist, however the package is named.
+    const valid = ['HOTEL', 'VACATION_HOME', 'RESORT', 'TRAVEL_AGENCY'];
+    for (const skin of Object.values(SKINS)) {
+      if (!skin.defaults.propertyType) continue;
+      expect(valid, skin.id).toContain(skin.defaults.propertyType);
+    }
+  });
+
   it('each vertical skin carries a caseType default', () => {
-    for (const id of ['hotel', 'event', 'trip'] as const) {
+    for (const id of ['hotel', 'event', 'trip', 'vacation-rental'] as const) {
       expect(SKINS[id].defaults.caseType).toBeTruthy();
     }
   });

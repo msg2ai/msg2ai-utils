@@ -70,6 +70,7 @@ newly created assistant gets.
 | `@msg2ai/hotel-ambassador` | `hotel-ambassador`, `hotel-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `HOTEL` |
 | `@msg2ai/event-ambassador` | `event-ambassador`, `event-ambassador-mcp` | `MEETING_EVENT_ASSISTANT` |
 | `@msg2ai/trip-ambassador` | `trip-ambassador`, `trip-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `TRAVEL_AGENCY` |
+| `@msg2ai/vacation-rental-ambassador` | `vacation-rental-ambassador`, `vacation-rental-ambassador-mcp` | `CONCIERGE_ASSISTANT` / `VACATION_HOME` |
 
 ## Things worth knowing before you automate
 
