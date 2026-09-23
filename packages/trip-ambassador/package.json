@@ -1,6 +1,6 @@
 {
   "name": "@msg2ai/trip-ambassador",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publishConfig": {
     "access": "public"
   },
@@ -31,6 +31,6 @@
     "cli"
   ],
   "dependencies": {
-    "@msg2ai/ai-ambassador-toolkit": "0.1.0"
+    "@msg2ai/ai-ambassador-toolkit": "0.1.1"
   }
 }

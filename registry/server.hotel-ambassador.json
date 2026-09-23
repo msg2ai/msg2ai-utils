@@ -9,13 +9,13 @@
     "source": "github",
     "subfolder": "packages/hotel-ambassador"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@msg2ai/hotel-ambassador",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "transport": {
         "type": "stdio"
       },
