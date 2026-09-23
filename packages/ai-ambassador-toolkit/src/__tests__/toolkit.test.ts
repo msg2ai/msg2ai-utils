@@ -5,7 +5,7 @@ import { TOOLS, catalogMatches, findTool, toolsForScopes } from '../tools';
 import { detectSkin, SKINS } from '../skin';
 import { buildOpenApi } from '../openapi';
 import { collectInput, parseArgs } from '../cli';
-import { handle } from '../mcp';
+import { handle, resolveApiKey, formatRpcError } from '../mcp';
 
 const KEY = 'msgk_live_test';
 
@@ -356,5 +356,47 @@ describe('DEFAULT_BASE_URL', () => {
       code: 'GATEWAY_UNREACHABLE',
       message: expect.stringContaining('api.msg2ai.xyz')
     });
+  });
+});
+
+describe('MCP key resolution', () => {
+  it('honours --key, which the missing-key error tells users to pass', () => {
+    // The error thrown when no key is present says "Set MSG2AI_AGENT_KEY or
+    // pass --key". mcp.ts read only process.env, so following that
+    // instruction produced the same error again.
+    expect(resolveApiKey(['--key', 'msgk_live_flag'], {})).toBe('msgk_live_flag');
+    // `--key=value` is NOT supported, by either skin: parseArgs is shared with
+    // the CLI and only reads the space-separated form. Pinned so the two
+    // cannot diverge without this failing.
+    expect(resolveApiKey(['--key=msgk_live_eq'], {})).toBe('');
+  });
+
+  it('falls back to the env var, and --key wins over it', () => {
+    expect(resolveApiKey([], { MSG2AI_AGENT_KEY: 'msgk_live_env' })).toBe(
+      'msgk_live_env'
+    );
+    expect(
+      resolveApiKey(['--key', 'msgk_live_flag'], { MSG2AI_AGENT_KEY: 'msgk_live_env' })
+    ).toBe('msgk_live_flag');
+  });
+
+  it('is empty when neither is given, so the client raises MISSING_KEY', () => {
+    expect(resolveApiKey([], {})).toBe('');
+  });
+});
+
+describe('MCP protocol errors', () => {
+  it('keeps the code, so a host shows auth failure not "server failed to load"', () => {
+    // tools/list resolves scopes via /capabilities, so a bad key throws out of
+    // the handler into a JSON-RPC protocol error rather than an isError
+    // result. Without the code appended, a host surfaces a bare string.
+    expect(
+      formatRpcError(new AmbassadorError('Invalid agent key', 401, 'INVALID_AGENT_KEY'))
+    ).toBe('Invalid agent key (INVALID_AGENT_KEY)');
+  });
+
+  it('degrades to the plain message for a codeless or non-Ambassador error', () => {
+    expect(formatRpcError(new AmbassadorError('Gateway down', 502))).toBe('Gateway down');
+    expect(formatRpcError(new Error('socket hang up'))).toBe('socket hang up');
   });
 });
