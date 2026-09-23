@@ -24,6 +24,21 @@ describe('catalog', () => {
     }
   });
 
+  it('does not ask for customerId, which the server derives', () => {
+    // create_broadcast and create_reminder used to require it because the
+    // delegated controllers did. msg2ai-server f35f2417 resolves the named
+    // serviceId inside an org-scoped predicate and injects that service's own
+    // customerId, discarding whatever the body sends. Asking for it would tell
+    // an agent to supply a value that is ignored and that it cannot learn.
+    for (const name of ['create_broadcast', 'create_reminder']) {
+      const tool = findTool(name)!;
+      expect(tool.input.properties).not.toHaveProperty('customerId');
+      expect(tool.input.required ?? []).not.toContain('customerId');
+      // serviceId is what tenancy is derived from now, so it cannot be optional.
+      expect(tool.input.required ?? []).toContain('serviceId');
+    }
+  });
+
   it('only capabilities is unscoped', () => {
     const unscoped = TOOLS.filter((t) => t.scope === null).map((t) => t.name);
     expect(unscoped).toEqual(['capabilities']);
@@ -120,6 +135,35 @@ describe('AmbassadorClient', () => {
   it('explains an HTML body rather than failing on JSON.parse', async () => {
     const fetchImpl = (async () =>
       new Response('<html>Authentication Required</html>', { status: 401 })) as unknown as typeof fetch;
+
+    await expect(clientWith(fetchImpl).call('list_assistants'))
+      .rejects.toMatchObject({ code: 'NON_JSON_RESPONSE' });
+  });
+
+  it('returns a CSV export as text instead of failing on JSON.parse', async () => {
+    // export_survey_responses is the one tool that does not answer JSON.
+    const fetchImpl = (async () =>
+      new Response('name,answer\nAda,yes\n', {
+        status: 200,
+        headers: { 'content-type': 'text/csv; charset=utf-8' }
+      })) as unknown as typeof fetch;
+
+    const out = (await clientWith(fetchImpl).call('export_survey_responses', {
+      surveyId: 'srv_1'
+    })) as { contentType: string; body: string };
+
+    expect(out.body).toContain('Ada,yes');
+    expect(out.contentType).toContain('csv');
+  });
+
+  it('SECURITY: still names an HTML body even with a 200, rather than returning it', async () => {
+    // A deployment-protection page can answer 200. The CSV branch above must
+    // not become a way for one to be handed back as if it were data.
+    const fetchImpl = (async () =>
+      new Response('<html>Authentication Required</html>', {
+        status: 200,
+        headers: { 'content-type': 'text/html' }
+      })) as unknown as typeof fetch;
 
     await expect(clientWith(fetchImpl).call('list_assistants'))
       .rejects.toMatchObject({ code: 'NON_JSON_RESPONSE' });
