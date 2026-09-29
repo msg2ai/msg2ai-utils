@@ -109,7 +109,8 @@ export async function serve() {
   try {
     client = new AmbassadorClient({
       apiKey,
-      baseUrl: process.env.MSG2AI_BASE_URL
+      baseUrl: process.env.MSG2AI_BASE_URL,
+      skin
     });
   } catch (error) {
     // stderr, never stdout: stdout is the JSON-RPC channel and anything else

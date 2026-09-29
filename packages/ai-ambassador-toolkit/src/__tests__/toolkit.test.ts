@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { AmbassadorClient, AmbassadorError, DEFAULT_BASE_URL, buildPath } from '../client';
 import { TOOLS, catalogMatches, findTool, toolsForScopes } from '../tools';
-import { detectSkin, SKINS } from '../skin';
+import { applySkinDefaults, detectSkin, SKINS } from '../skin';
 import { buildOpenApi } from '../openapi';
 import { collectInput, parseArgs } from '../cli';
 import { handle } from '../mcp';
@@ -211,6 +211,104 @@ describe('skins', () => {
     for (const id of ['hotel', 'event', 'trip', 'vacation-rental'] as const) {
       expect(SKINS[id].defaults.caseType).toBeTruthy();
     }
+  });
+});
+
+describe('skin defaults on create_assistant', () => {
+  const create = (assistantData?: unknown) =>
+    assistantData === undefined
+      ? { assistantName: 'Bot' }
+      : { assistantName: 'Bot', assistantData };
+
+  it('fills the hotel pair when the caller sent neither', () => {
+    expect(applySkinDefaults('create_assistant', create({}), SKINS.hotel)).toEqual({
+      assistantName: 'Bot',
+      assistantData: { caseType: 'CONCIERGE_ASSISTANT', propertyType: 'HOTEL' }
+    });
+  });
+
+  it('creates assistantData when it was omitted', () => {
+    expect(
+      applySkinDefaults('create_assistant', create(), SKINS.event).assistantData
+    ).toEqual({ caseType: 'MEETING_EVENT_ASSISTANT' });
+  });
+
+  it('keeps every other assistantData field the caller sent', () => {
+    const out = applySkinDefaults(
+      'create_assistant',
+      create({ language: 'en', caseType: undefined }),
+      SKINS['vacation-rental']
+    );
+    expect(out.assistantData).toEqual({
+      language: 'en',
+      caseType: 'CONCIERGE_ASSISTANT',
+      propertyType: 'VACATION_HOME'
+    });
+  });
+
+  it('never overrides a caseType or propertyType the caller chose', () => {
+    const out = applySkinDefaults(
+      'create_assistant',
+      create({ caseType: 'CONCIERGE_ASSISTANT', propertyType: 'RESORT' }),
+      SKINS.hotel
+    );
+    expect(out.assistantData).toEqual({
+      caseType: 'CONCIERGE_ASSISTANT',
+      propertyType: 'RESORT'
+    });
+  });
+
+  it('does not bolt the skin propertyType onto a different caseType', () => {
+    const out = applySkinDefaults(
+      'create_assistant',
+      create({ caseType: 'MEETING_EVENT_ASSISTANT' }),
+      SKINS.hotel
+    );
+    expect(out.assistantData).toEqual({ caseType: 'MEETING_EVENT_ASSISTANT' });
+  });
+
+  it('leaves the generic skin, other tools and non-object assistantData alone', () => {
+    const input = create({});
+    expect(applySkinDefaults('create_assistant', input, SKINS.generic)).toBe(input);
+    const update = { serviceId: 's', assistantData: {} };
+    expect(applySkinDefaults('update_assistant', update, SKINS.hotel)).toBe(update);
+    const flag = create('{"caseType":"X"}');
+    expect(applySkinDefaults('create_assistant', flag, SKINS.hotel)).toBe(flag);
+  });
+
+  it('does not mutate the caller input', () => {
+    const data = { language: 'en' };
+    applySkinDefaults('create_assistant', create(data), SKINS.hotel);
+    expect(data).toEqual({ language: 'en' });
+  });
+
+  it('the client sends the skin defaults in the create_assistant body', async () => {
+    const fetchImpl = vi.fn(async (_url: string | URL, init?: RequestInit) => {
+      expect(JSON.parse(init!.body as string)).toEqual({
+        assistantName: 'Harbor House',
+        assistantData: { caseType: 'CONCIERGE_ASSISTANT', propertyType: 'HOTEL' }
+      });
+      return new Response('{}', { status: 201 });
+    }) as unknown as typeof fetch;
+    const client = new AmbassadorClient({
+      apiKey: KEY,
+      baseUrl: 'https://gw.test',
+      fetchImpl,
+      skin: SKINS.hotel
+    });
+    await client.call('create_assistant', { assistantName: 'Harbor House' });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('a client built without a skin sends create_assistant unchanged', async () => {
+    const fetchImpl = vi.fn(async (_url: string | URL, init?: RequestInit) => {
+      expect(JSON.parse(init!.body as string)).toEqual({ assistantName: 'Bot' });
+      return new Response('{}', { status: 201 });
+    }) as unknown as typeof fetch;
+    await new AmbassadorClient({ apiKey: KEY, baseUrl: 'https://gw.test', fetchImpl }).call(
+      'create_assistant',
+      { assistantName: 'Bot' }
+    );
   });
 });
 

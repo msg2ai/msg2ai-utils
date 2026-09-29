@@ -1,4 +1,5 @@
 import { findTool, type AgentTool } from './tools';
+import { applySkinDefaults, SKINS, type Skin } from './skin';
 
 /**
  * A typed client for the msg2ai agent gateway.
@@ -17,6 +18,9 @@ export interface AmbassadorClientOptions {
   /** Defaults to 30s. A broadcast send can be slow. */
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
+  /** The vertical whose defaults a new assistant gets. Defaults to generic,
+   *  which has none, so a client built without one sends input unchanged. */
+  skin?: Skin;
 }
 
 /**
@@ -67,6 +71,7 @@ export class AmbassadorClient {
   private readonly host: string;
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
+  private readonly skin: Skin;
 
   constructor(options: AmbassadorClientOptions) {
     if (!options.apiKey) {
@@ -95,6 +100,7 @@ export class AmbassadorClient {
     this.baseUrl = configured;
     this.timeoutMs = options.timeoutMs ?? 30_000;
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
+    this.skin = options.skin ?? SKINS.generic;
   }
 
   async call(toolName: string, input: Record<string, unknown> = {}) {
@@ -103,7 +109,9 @@ export class AmbassadorClient {
       throw new AmbassadorError(`Unknown tool "${toolName}"`, 400, 'UNKNOWN_TOOL');
     }
 
-    const { path, rest } = buildPath(tool, input);
+    // Here rather than in the CLI and the MCP server separately, so the two
+    // skins cannot disagree about what a hotel binary creates.
+    const { path, rest } = buildPath(tool, applySkinDefaults(tool.name, input, this.skin));
     const url = new URL(`${this.baseUrl}/api/agent${path}`);
 
     let body: string | undefined;
