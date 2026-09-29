@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createInterface } from 'readline';
 import { AmbassadorClient, AmbassadorError } from './client';
+import { parseArgs } from './cli';
 import { TOOLS, toolsForScopes } from './tools';
 import { detectSkin } from './skin';
 
@@ -100,10 +101,35 @@ export async function handle(
  * their own bin file — and when they do, `require.main` is THEIR module, so a
  * module-guarded entry point would load and then silently do nothing.
  */
+/**
+ * `--key` as well as the env var, because the error thrown when both are
+ * missing says "Set MSG2AI_AGENT_KEY or pass --key" — and until this existed,
+ * passing --key to the MCP binary produced that same error again. Same
+ * precedence and the same parser as the CLI, so the two skins cannot drift.
+ */
+export function resolveApiKey(
+  argv: string[],
+  env: Record<string, string | undefined>
+): string {
+  return (parseArgs(argv).flags.key as string) ?? env.MSG2AI_AGENT_KEY ?? '';
+}
+
+/**
+ * `tools/list` resolves scopes from /capabilities, so a bad key throws out of
+ * the handler rather than through the isError path `tools/call` enjoys — and a
+ * host renders a JSON-RPC protocol error as "server failed to load". Keeping
+ * the code in the message is what makes it read as an auth problem instead.
+ */
+export function formatRpcError(error: unknown): string {
+  return error instanceof AmbassadorError && error.code
+    ? `${error.message} (${error.code})`
+    : (error as Error).message;
+}
+
 /* c8 ignore start */
 export async function serve() {
   const skin = detectSkin();
-  const apiKey = process.env.MSG2AI_AGENT_KEY ?? '';
+  const apiKey = resolveApiKey(process.argv.slice(2), process.env);
 
   let client: AmbassadorClient;
   try {
@@ -140,7 +166,13 @@ export async function serve() {
     try {
       await handle(request, { client, allowed, label: `${skin.label} MCP` });
     } catch (error) {
-      replyError(request.id ?? null, -32603, (error as Error).message);
+      const message = formatRpcError(error);
+      // stderr too on auth failure: that is the half of the channel a host
+      // actually shows a human in its logs.
+      if (error instanceof AmbassadorError && error.status === 401) {
+        process.stderr.write(`${message}\n`);
+      }
+      replyError(request.id ?? null, -32603, message);
     }
   }
 }
