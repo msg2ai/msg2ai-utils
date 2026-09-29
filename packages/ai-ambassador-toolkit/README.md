@@ -62,7 +62,11 @@ conversation aborting.
 ## Vertical skins
 
 The same build serves every vertical; the binary's name selects the defaults a
-newly created assistant gets.
+newly created assistant gets. They fill `assistantData.caseType` and
+`propertyType` on `create_assistant` only, and anything you pass yourself wins.
+`propertyType` is filled only when the `caseType` is the skin's own, so choosing
+a different `caseType` on a vertical binary never picks up a mismatched
+property type.
 
 | Package | Binaries | Defaults |
 | --- | --- | --- |

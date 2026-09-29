@@ -102,7 +102,8 @@ export async function run(argv: string[] = process.argv.slice(2)): Promise<numbe
     client = new AmbassadorClient({
       apiKey,
       baseUrl:
-        (parsed.flags['base-url'] as string) ?? process.env.MSG2AI_BASE_URL
+        (parsed.flags['base-url'] as string) ?? process.env.MSG2AI_BASE_URL,
+      skin
     });
   } catch (error) {
     console.error(`✗ ${(error as Error).message}`);

@@ -43,6 +43,46 @@ export const SKINS: Record<Skin['id'], Skin> = {
 };
 
 /**
+ * Fill a skin's defaults into `create_assistant`'s `assistantData`.
+ *
+ * Only that tool: `update_assistant` edits something that already has a
+ * vertical, and re-stamping it would silently convert an event assistant a
+ * hotel operator happens to rename. What the caller sent always wins.
+ *
+ * The defaults are a pair, not two independent fields. A caller who picks a
+ * different caseType on the hotel binary has chosen a different kind of
+ * assistant, and bolting HOTEL onto it would produce a combination nobody
+ * asked for, so propertyType is filled only when caseType matches the skin's.
+ *
+ * A non-object `assistantData` (a CLI flag arrives as a string) is left alone
+ * for the gateway to reject by name, rather than overwritten here.
+ */
+export function applySkinDefaults(
+  toolName: string,
+  input: Record<string, unknown>,
+  skin: Skin
+): Record<string, unknown> {
+  const { caseType, propertyType } = skin.defaults;
+  if (toolName !== 'create_assistant' || !caseType) return input;
+
+  const given = input.assistantData;
+  const isObject =
+    typeof given === 'object' && given !== null && !Array.isArray(given);
+  if (given !== undefined && !isObject) return input;
+
+  const data = { ...((given as Record<string, unknown> | undefined) ?? {}) };
+  if (data.caseType === undefined) data.caseType = caseType;
+  if (
+    propertyType &&
+    data.propertyType === undefined &&
+    data.caseType === caseType
+  ) {
+    data.propertyType = propertyType;
+  }
+  return { ...input, assistantData: data };
+}
+
+/**
  * `hotel-ambassador` and `hotel-ambassador-mcp` both select the hotel skin.
  * An unrecognised name falls back to generic rather than failing: a wrapper
  * script or a renamed binary should still work.

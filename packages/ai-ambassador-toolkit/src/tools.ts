@@ -1360,7 +1360,7 @@ export const TOOLS: AgentTool[] = [
     path: '/reminders',
     scope: 'reminders:write',
     summary:
-      'Create a reminder. It schedules a message to an audience, and the send happens later in the scheduler, outside this key and its daily send budget.',
+      'Draft a reminder. Created as DRAFT and never sent by this key: a person turns it on in the dashboard.',
     input: {
       type: 'object',
       properties: {
@@ -1428,7 +1428,7 @@ export const TOOLS: AgentTool[] = [
     path: '/reminders/:reminderId',
     scope: 'reminders:write',
     summary:
-      'Update a reminder.',
+      'Update a draft or paused reminder. Does not turn it on.',
     input: {
       type: 'object',
       properties: {
@@ -1485,29 +1485,12 @@ export const TOOLS: AgentTool[] = [
     }
   },
   {
-    name: 'enable_reminder',
-    method: 'post',
-    path: '/reminders/:reminderId/enable',
-    scope: 'reminders:write',
-    summary:
-      'Turn a reminder on. The scheduler sends only when it is ACTIVE and enabled.',
-    input: {
-      type: 'object',
-      properties: {
-        reminderId: {
-          type: 'string'
-        }
-      },
-      required: ['reminderId']
-    }
-  },
-  {
     name: 'disable_reminder',
     method: 'post',
     path: '/reminders/:reminderId/disable',
     scope: 'reminders:write',
     summary:
-      'Turn a reminder off without deleting it.',
+      'Turn a reminder off without deleting it. Turning it back on is a dashboard action.',
     input: {
       type: 'object',
       properties: {
