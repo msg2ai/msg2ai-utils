@@ -39,6 +39,12 @@ describe('catalog', () => {
     }
   });
 
+  it('no tool can arm a reminder: agents draft them, a person turns them on', () => {
+    expect(findTool('enable_reminder')).toBeUndefined();
+    expect(TOOLS.some((t) => t.path.startsWith('/reminders') && t.path.endsWith('/enable'))).toBe(false);
+    expect(findTool('create_reminder')?.summary).toMatch(/DRAFT/);
+  });
+
   it('only capabilities is unscoped', () => {
     const unscoped = TOOLS.filter((t) => t.scope === null).map((t) => t.name);
     expect(unscoped).toEqual(['capabilities']);
